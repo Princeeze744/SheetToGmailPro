@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <h2>Dashboard</h2>
+        <p class="text-muted">Monitor your Google Sheets and get email notifications</p>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{{ url_for('main.new_configuration') }}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> New Configuration
+        </a>
+    </div>
+</div>
+
+<div class="row mt-4">
+    {% for config in configurations %}
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">{{ config.name }}</h5>
+                <form method="POST" action="{{ url_for('main.toggle_configuration', id=config.id) }}">
+                    <button type="submit" class="btn btn-sm {% if config.is_active %}btn-success{% else %}btn-secondary{% endif %}">
+                        {% if config.is_active %}Active{% else %}Inactive{% endif %}
+                    </button>
+                </form>
+            </div>
+            <div class="card-body">
+                <p><strong>Sheet:</strong> {{ config.spreadsheet_id }}</p>
+                <p><strong>Worksheet:</strong> {{ config.worksheet_name }}</p>
+                <p><strong>Polling:</strong> Every {{ config.poll_interval }} seconds</p>
+                <p><strong>Recipient:</strong> {{ config.recipient_email }}</p>
+                <p class="text-muted"><small>Created: {{ config.created_at.strftime('%Y-%m-%d %H:%M') }}</small></p>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="col-12">
+        <div class="alert alert-info">
+            <h4 class="alert-heading">No configurations yet!</h4>
+            <p>Get started by creating your first Google Sheet monitoring configuration.</p>
+            <a href="{{ url_for('main.new_configuration') }}" class="btn btn-primary">Create Configuration</a>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

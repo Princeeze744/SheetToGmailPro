@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>{% if form.name.data %}Edit{% else %}New{% endif %} Configuration</h2>
+<form method="POST">
+    {{ form.hidden_tag() }}
+    <div class="mb-3">
+        {{ form.name.label(class="form-label") }}
+        {{ form.name(class="form-control") }}
+    </div>
+    <div class="mb-3">
+        {{ form.spreadsheet_id.label(class="form-label") }}
+        {{ form.spreadsheet_id(class="form-control") }}
+    </div>
+    <div class="mb-3">
+        {{ form.worksheet_name.label(class="form-label") }}
+        {{ form.worksheet_name(class="form-control") }}
+    </div>
+    <div class="mb-3">
+        {{ form.sender_email.label(class="form-label") }}
+        {{ form.sender_email(class="form-control") }}
+    </div>
+    <div class="mb-3">
+        {{ form.gmail_app_password.label(class="form-label") }}
+        {{ form.gmail_app_password(class="form-control", type="password") }}
+    </div>
+    <div class="mb-3">
+        {{ form.recipient_email.label(class="form-label") }}
+        {{ form.recipient_email(class="form-control") }}
+    </div>
+    <div class="mb-3">
+        {{ form.poll_interval.label(class="form-label") }}
+        {{ form.poll_interval(class="form-control") }}
+    </div>
+    <button type="submit" class="btn btn-primary">Save Configuration</button>
+</form>
+{% endblock %}
