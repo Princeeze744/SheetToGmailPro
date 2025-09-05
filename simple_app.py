@@ -4,22 +4,51 @@ import time
 import json
 import os
 from datetime import datetime
-
-# Import your existing automation code
 import gspread
 from google.oauth2.service_account import Credentials
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import smtplib
+import sqlite3
+from functools import wraps
 
 app = Flask(__name__)
+app.secret_key = 'your-secret-key-here'  # Change this in production
 
 # Configuration
 CONFIG_FILE = 'config.json'
+DB_FILE = 'app.db'
 
 # Global variables
 monitoring = False
 monitor_thread = None
+stats = {
+    'emails_sent': 0,
+    'rows_processed': 0,
+    'last_check': None
+}
+
+# Initialize database
+def init_db():
+    conn = sqlite3.connect(DB_FILE)
+    c = conn.cursor()
+    c.execute('''CREATE TABLE IF NOT EXISTS activity_logs
+                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                  timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+                  level TEXT,
+                  message TEXT)''')
+    conn.commit()
+    conn.close()
+
+init_db()
+
+def log_activity(level, message):
+    conn = sqlite3.connect(DB_FILE)
+    c = conn.cursor()
+    c.execute("INSERT INTO activity_logs (level, message) VALUES (?, ?)", 
+              (level, message))
+    conn.commit()
+    conn.close()
 
 def load_config():
     if os.path.exists(CONFIG_FILE):
@@ -43,9 +72,11 @@ def authenticate_google():
     try:
         scopes = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
         creds = Credentials.from_service_account_file('credentials.json', scopes=scopes)
-        return gspread.authorize(creds)
+        client = gspread.authorize(creds)
+        log_activity('INFO', 'Google authentication successful')
+        return client
     except Exception as e:
-        print(f"Failed to authenticate: {e}")
+        log_activity('ERROR', f'Google authentication failed: {str(e)}')
         return None
 
 def send_email(config, row_data):
@@ -67,20 +98,22 @@ def send_email(config, row_data):
             server.login(config['sender_email'], config['gmail_app_password'])
             server.send_message(msg)
 
-        print(f"Email sent to {config['recipient_email']}")
+        stats['emails_sent'] += 1
+        log_activity('SUCCESS', f"Email sent to {config['recipient_email']}")
         return True
 
     except Exception as e:
-        print(f"Failed to send email: {e}")
+        log_activity('ERROR', f"Failed to send email: {str(e)}")
         return False
 
 def monitor_sheet():
-    global monitoring
+    global monitoring, stats
     config = load_config()
     client = authenticate_google()
+    
     if not client:
-        print("Failed to authenticate Google Sheets")
         monitoring = False
+        log_activity('ERROR', 'Failed to authenticate Google Sheets - monitoring stopped')
         return
 
     try:
@@ -88,16 +121,18 @@ def monitor_sheet():
         worksheet = spreadsheet.worksheet(config['worksheet_name'])
         last_row_count = len(worksheet.get_all_values())
 
-        print(f"Started monitoring. Initial rows: {last_row_count}")
+        log_activity('INFO', f"Started monitoring. Initial rows: {last_row_count}")
 
         while monitoring:
             try:
                 all_values = worksheet.get_all_values()
                 current_row_count = len(all_values)
+                stats['last_check'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
                 if current_row_count > last_row_count:
                     new_rows = all_values[last_row_count:]
-                    print(f"Found {len(new_rows)} new rows")
+                    log_activity('INFO', f"Found {len(new_rows)} new rows")
+                    stats['rows_processed'] += len(new_rows)
 
                     for row in new_rows:
                         send_email(config, row)
@@ -107,13 +142,14 @@ def monitor_sheet():
                 time.sleep(config['poll_interval'])
 
             except Exception as e:
-                print(f"Monitoring error: {e}")
+                log_activity('ERROR', f"Monitoring error: {str(e)}")
                 time.sleep(60)  # wait before retrying
 
     except Exception as e:
-        print(f"Failed to start monitoring: {e}")
+        log_activity('ERROR', f"Failed to start monitoring: {str(e)}")
     finally:
         monitoring = False
+        log_activity('INFO', 'Monitoring stopped')
 
 @app.route('/')
 def index():
@@ -132,6 +168,7 @@ def update_config():
         "column_headers": ["Name", "Email", "Message", "Date"]
     }
     save_config(config)
+    log_activity('INFO', 'Configuration updated')
     return jsonify({'status': 'success'})
 
 @app.route('/toggle_monitoring', methods=['POST'])
@@ -144,11 +181,51 @@ def toggle_monitoring():
         monitor_thread = threading.Thread(target=monitor_sheet)
         monitor_thread.daemon = True
         monitor_thread.start()
+        log_activity('INFO', 'Monitoring started')
         return jsonify({'status': 'started'})
     else:
         # Stop monitoring
         monitoring = False
+        log_activity('INFO', 'Monitoring stopped')
         return jsonify({'status': 'stopped'})
 
+@app.route('/test_connection')
+def test_connection():
+    client = authenticate_google()
+    if client:
+        return jsonify({'status': 'success', 'message': 'Google connection successful'})
+    else:
+        return jsonify({'status': 'error', 'message': 'Google connection failed'})
+
+@app.route('/test_email')
+def test_email():
+    config = load_config()
+    test_row = ['Test Name', 'test@example.com', 'This is a test message', datetime.now().strftime('%Y-%m-%d')]
+    success = send_email(config, test_row)
+    
+    if success:
+        return jsonify({'status': 'success', 'message': 'Test email sent successfully'})
+    else:
+        return jsonify({'status': 'error', 'message': 'Failed to send test email'})
+
+@app.route('/monitoring_status')
+def monitoring_status():
+    return jsonify({'monitoring': monitoring})
+
+@app.route('/get_stats')
+def get_stats():
+    return jsonify(stats)
+
+@app.route('/get_logs')
+def get_logs():
+    conn = sqlite3.connect(DB_FILE)
+    c = conn.cursor()
+    c.execute("SELECT timestamp, level, message FROM activity_logs ORDER BY id DESC LIMIT 50")
+    logs = c.fetchall()
+    conn.close()
+    
+    return jsonify({'logs': logs})
+
 if __name__ == '__main__':
+    log_activity('INFO', 'Application started')
     app.run(debug=True, host='0.0.0.0', port=5000)

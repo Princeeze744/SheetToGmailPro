@@ -1,50 +1,293 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>SheetToGmail Web</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SheetToGmail Pro - Automated Google Sheet Monitoring</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #4e73df;
+            --secondary-color: #6f42c1;
+            --accent-color: #36b9cc;
+        }
+        body {
+            background-color: #f8f9fc;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .navbar-brand {
+            font-weight: 700;
+            color: var(--primary-color) !important;
+        }
+        .hero-section {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+            border-radius: 10px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        .card {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+            margin-bottom: 1.5rem;
+        }
+        .card-header {
+            background-color: white;
+            border-bottom: 1px solid #e3e6f0;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+        .btn-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+        .btn-primary:hover {
+            background-color: var(--secondary-color);
+            border-color: var(--secondary-color);
+        }
+        .status-badge {
+            padding: 0.5rem 1rem;
+            border-radius: 50px;
+            font-weight: 600;
+        }
+        .status-active {
+            background-color: #1cc88a;
+            color: white;
+        }
+        .status-inactive {
+            background-color: #e74a3b;
+            color: white;
+        }
+        .feature-icon {
+            font-size: 2rem;
+            color: var(--accent-color);
+            margin-bottom: 1rem;
+        }
+        .footer {
+            background-color: white;
+            padding: 1.5rem 0;
+            margin-top: 3rem;
+            border-top: 1px solid #e3e6f0;
+        }
+    </style>
 </head>
 <body>
-    <div class="container mt-4">
-        <h1>SheetToGmail Web</h1>
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <i class="bi bi-envelope-plus-fill me-2"></i>SheetToGmail Pro
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#features">Features</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#docs">Documentation</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#support">Support</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
 
-        <form id="configForm">
-            <div class="mb-3">
-                <label class="form-label">Spreadsheet ID</label>
-                <input type="text" class="form-control" name="spreadsheet_id" value="{{ config.spreadsheet_id }}">
+    <div class="container my-5">
+        <div class="hero-section">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h1 class="display-4 fw-bold">Automate Your Google Sheet Notifications</h1>
+                    <p class="lead">Get instant email alerts when new data is added to your Google Sheets</p>
+                    <div class="d-flex gap-2 mt-4">
+                        <span class="status-badge status-active">Active Monitoring</span>
+                        <span class="status-badge status-inactive" id="monitoringStatus">Inactive</span>
+                    </div>
+                </div>
+                <div class="col-md-4 text-center">
+                    <i class="bi bi-bar-chart-fill" style="font-size: 5rem; opacity: 0.8;"></i>
+                </div>
             </div>
-            <div class="mb-3">
-                <label class="form-label">Worksheet Name</label>
-                <input type="text" class="form-control" name="worksheet_name" value="{{ config.worksheet_name }}">
-            </div>
-            <div class="mb-3">
-                <label class="form-label">Sender Email</label>
-                <input type="email" class="form-control" name="sender_email" value="{{ config.sender_email }}">
-            </div>
-            <div class="mb-3">
-                <label class="form-label">Gmail App Password</label>
-                <input type="password" class="form-control" name="gmail_app_password" value="{{ config.gmail_app_password }}">
-            </div>
-            <div class="mb-3">
-                <label class="form-label">Recipient Email</label>
-                <input type="email" class="form-control" name="recipient_email" value="{{ config.recipient_email }}">
-            </div>
-            <div class="mb-3">
-                <label class="form-label">Poll Interval (seconds)</label>
-                <input type="number" class="form-control" name="poll_interval" value="{{ config.poll_interval }}">
-            </div>
-            <button type="submit" class="btn btn-primary">Save Configuration</button>
-        </form>
+        </div>
 
-        <hr>
-
-        <button id="toggleMonitoring" class="btn {% if monitoring %}btn-danger{% else %}btn-success{% endif %}">
-            {% if monitoring %}Stop Monitoring{% else %}Start Monitoring{% endif %}
-        </button>
-
-        <div id="status" class="mt-3"></div>
+        <div class="row">
+            <div class="col-lg-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="bi bi-gear me-2"></i>Configuration</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="configForm">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Spreadsheet ID</label>
+                                    <input type="text" class="form-control" name="spreadsheet_id" value="{{ config.spreadsheet_id }}" required>
+                                    <div class="form-text">The ID from your Google Sheet URL</div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Worksheet Name</label>
+                                    <input type="text" class="form-control" name="worksheet_name" value="{{ config.worksheet_name }}" required>
+                                    <div class="form-text">Usually "Sheet1" unless renamed</div>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Sender Email</label>
+                                    <input type="email" class="form-control" name="sender_email" value="{{ config.sender_email }}" required>
+                                    <div class="form-text">Your Gmail address</div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Gmail App Password</label>
+                                    <input type="password" class="form-control" name="gmail_app_password" value="{{ config.gmail_app_password }}" required>
+                                    <div class="form-text">16-character app password from Gmail</div>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Recipient Email</label>
+                                    <input type="email" class="form-control" name="recipient_email" value="{{ config.recipient_email }}" required>
+                                    <div class="form-text">Where notifications should be sent</div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Poll Interval (seconds)</label>
+                                    <input type="number" class="form-control" name="poll_interval" value="{{ config.poll_interval }}" min="10" required>
+                                    <div class="form-text">How often to check for new rows</div>
+                                </div>
+                            </div>
+                            
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle me-1"></i>Save Configuration
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="bi bi-play-circle me-2"></i>Monitoring Control</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6>Sheet Monitoring</h6>
+                                <p class="text-muted mb-0" id="statusText">Currently not monitoring</p>
+                            </div>
+                            <button id="toggleMonitoring" class="btn btn-success">
+                                <i class="bi bi-play-fill me-1"></i>Start Monitoring
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>Quick Stats</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between mb-3">
+                            <span>Monitoring Status:</span>
+                            <span class="fw-bold" id="statsStatus">Inactive</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-3">
+                            <span>Last Check:</span>
+                            <span class="fw-bold" id="lastCheck">Never</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-3">
+                            <span>Emails Sent:</span>
+                            <span class="fw-bold" id="emailsSent">0</span>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span>Rows Processed:</span>
+                            <span class="fw-bold" id="rowsProcessed">0</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="bi bi-lightning me-2"></i>Quick Actions</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-outline-primary" id="testConnection">
+                                <i class="bi bi-plug me-1"></i>Test Google Connection
+                            </button>
+                            <button class="btn btn-outline-primary" id="testEmail">
+                                <i class="bi bi-envelope me-1"></i>Send Test Email
+                            </button>
+                            <button class="btn btn-outline-secondary" id="viewLogs">
+                                <i class="bi bi-list-check me-1"></i>View Activity Logs
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <section id="features" class="my-5 pt-5">
+            <h2 class="text-center mb-5">Powerful Features</h2>
+            <div class="row">
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100 text-center">
+                        <div class="card-body">
+                            <div class="feature-icon">
+                                <i class="bi bi-envelope-check"></i>
+                            </div>
+                            <h5>Instant Email Alerts</h5>
+                            <p>Get notified immediately when new data is added to your Google Sheets</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100 text-center">
+                        <div class="card-body">
+                            <div class="feature-icon">
+                                <i class="bi bi-shield-check"></i>
+                            </div>
+                            <h5>Secure & Private</h5>
+                            <p>Your data stays secure with encrypted connections and limited permissions</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100 text-center">
+                        <div class="card-body">
+                            <div class="feature-icon">
+                                <i class="bi bi-infinity"></i>
+                            </div>
+                            <h5>24/7 Monitoring</h5>
+                            <p>Continuous monitoring even when your computer is off with cloud deployment</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
     </div>
 
+    <footer class="footer">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>SheetToGmail Pro</h5>
+                    <p class="text-muted">Automate your workflow with instant Google Sheet notifications</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <p class="text-muted">© 2024 SheetToGmail Pro. All rights reserved.</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         document.getElementById('configForm').addEventListener('submit', function(e) {
             e.preventDefault();
@@ -55,10 +298,10 @@
             })
             .then(response => response.json())
             .then(data => {
-                document.getElementById('status').innerHTML = '<div class="alert alert-success">Configuration saved!</div>';
+                showAlert('Configuration saved successfully!', 'success');
             })
             .catch(error => {
-                document.getElementById('status').innerHTML = '<div class="alert alert-danger">Error saving configuration.</div>';
+                showAlert('Error saving configuration.', 'danger');
             });
         });
 
@@ -69,17 +312,77 @@
             .then(response => response.json())
             .then(data => {
                 if (data.status === 'started') {
+                    this.innerHTML = '<i class="bi bi-stop-fill me-1"></i>Stop Monitoring';
                     this.classList.remove('btn-success');
                     this.classList.add('btn-danger');
-                    this.textContent = 'Stop Monitoring';
-                    document.getElementById('status').innerHTML = '<div class="alert alert-success">Monitoring started!</div>';
+                    document.getElementById('monitoringStatus').textContent = 'Active';
+                    document.getElementById('monitoringStatus').className = 'status-badge status-active';
+                    document.getElementById('statsStatus').textContent = 'Active';
+                    showAlert('Monitoring started successfully!', 'success');
                 } else {
+                    this.innerHTML = '<i class="bi bi-play-fill me-1"></i>Start Monitoring';
                     this.classList.remove('btn-danger');
                     this.classList.add('btn-success');
-                    this.textContent = 'Start Monitoring';
-                    document.getElementById('status').innerHTML = '<div class="alert alert-info">Monitoring stopped.</div>';
+                    document.getElementById('monitoringStatus').textContent = 'Inactive';
+                    document.getElementById('monitoringStatus').className = 'status-badge status-inactive';
+                    document.getElementById('statsStatus').textContent = 'Inactive';
+                    showAlert('Monitoring stopped.', 'info');
                 }
             });
+        });
+
+        document.getElementById('testConnection').addEventListener('click', function() {
+            fetch('/test_connection')
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    showAlert('Google connection test successful!', 'success');
+                } else {
+                    showAlert('Google connection test failed: ' + data.message, 'danger');
+                }
+            });
+        });
+
+        document.getElementById('testEmail').addEventListener('click', function() {
+            fetch('/test_email')
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    showAlert('Test email sent successfully!', 'success');
+                } else {
+                    showAlert('Failed to send test email: ' + data.message, 'danger');
+                }
+            });
+        });
+
+        function showAlert(message, type) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+            alertDiv.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            
+            document.querySelector('.container').prepend(alertDiv);
+            
+            setTimeout(() => {
+                alertDiv.classList.remove('show');
+                setTimeout(() => alertDiv.remove(), 150);
+            }, 5000);
+        }
+
+        // Check initial monitoring status
+        fetch('/monitoring_status')
+        .then(response => response.json())
+        .then(data => {
+            if (data.monitoring) {
+                document.getElementById('toggleMonitoring').innerHTML = '<i class="bi bi-stop-fill me-1"></i>Stop Monitoring';
+                document.getElementById('toggleMonitoring').classList.remove('btn-success');
+                document.getElementById('toggleMonitoring').classList.add('btn-danger');
+                document.getElementById('monitoringStatus').textContent = 'Active';
+                document.getElementById('monitoringStatus').className = 'status-badge status-active';
+                document.getElementById('statsStatus').textContent = 'Active';
+            }
         });
     </script>
 </body>

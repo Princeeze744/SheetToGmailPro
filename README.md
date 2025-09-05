@@ -1,62 +1,20 @@
-\# SheetToGmail Pro
+# SheetToGmail Pro
 
+A professional web application for monitoring Google Sheets and sending automated email notifications.
 
+## Features
 
-A professional web application for monitoring Google Sheets and sending email notifications automatically.
+- 🔐 User authentication and authorization
+- 📊 Real-time Google Sheet monitoring
+- 📧 Automated email notifications
+- 🎨 Beautiful, responsive dashboard
+- 📈 Activity logging and statistics
+- ⚙️ Easy configuration management
+- 🌐 Multiple deployment options
 
+## Installation
 
-
-\## Features
-
-
-
-\- Web-based dashboard
-
-\- User authentication
-
-\- Multiple configuration support
-
-\- Real-time monitoring
-
-\- Email notifications
-
-\- Beautiful responsive UI
-
-
-
-\## Installation
-
-
-
-1\. Clone this repository
-
-2\. Create a virtual environment: `python -m venv venv`
-
-3\. Activate the virtual environment: `venv\\Scripts\\activate`
-
-4\. Install dependencies: `pip install -r requirements.txt`
-
-5\. Set up database: `flask db init`, `flask db migrate`, `flask db upgrade`
-
-6\. Run the application: `python run.py`
-
-
-
-\## Configuration
-
-
-
-1\. Place your Google service account credentials in `credentials.json`
-
-2\. Configure your Gmail app password in the dashboard
-
-3\. Set up your Google Sheet monitoring configurations
-
-
-
-\## Deployment
-
-
-
-This application can be deployed to Heroku, DigitalOcean, or any Python hosting platform.
-
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/Princeeze744/SheetToGmailPro.git
+   cd SheetToGmailPro
